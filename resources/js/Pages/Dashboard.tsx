@@ -36,7 +36,7 @@ export default function Dashboard({ scope, periods, periodId, totals, byPerson, 
                 <select
                     className="input w-auto"
                     value={periodId ?? ''}
-                    onChange={(e) => router.get(url('/'), { period: e.target.value }, { preserveState: true })}
+                    onChange={(e) => router.get(url('/dashboard'), { period: e.target.value }, { preserveState: true })}
                 >
                     {periods.map((p) => (
                         <option key={p.id} value={p.id}>

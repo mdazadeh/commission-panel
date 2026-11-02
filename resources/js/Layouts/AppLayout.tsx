@@ -9,7 +9,7 @@ type Group = { title: string; items: Item[] };
 
 // Menu architecture from brief §10. «soon» items are later phases and are shown disabled.
 const MENU: Group[] = [
-    { title: 'داشبوردها', items: [{ label: 'داشبورد', href: '/' }] },
+    { title: 'داشبوردها', items: [{ label: 'داشبورد', href: '/dashboard' }] },
     {
         title: 'مدیریت داده',
         items: [
@@ -66,7 +66,7 @@ export default function AppLayout({ title, children, actions }: { title: string;
                                                 <Link
                                                     href={url(i.href)}
                                                     className={`block rounded-lg px-3 py-1.5 text-sm ${
-                                                        current === url(i.href) || (i.href !== '/' && current.startsWith(url(i.href)))
+                                                        current === url(i.href) || current.startsWith(`${url(i.href)}/`)
                                                             ? 'bg-brand/10 font-medium text-brand'
                                                             : 'text-ink hover:bg-surface'
                                                     }`}

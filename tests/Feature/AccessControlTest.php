@@ -36,7 +36,7 @@ class AccessControlTest extends TestCase
 
         $this->actingAs($admin)->get('/users')->assertOk();
         $this->actingAs($admin)->get('/imports')->assertForbidden();
-        $this->actingAs($admin)->get('/')->assertInertia(fn (Assert $p) => $p->where('scope', 'none')->where('totals', null));
+        $this->actingAs($admin)->get('/dashboard')->assertInertia(fn (Assert $p) => $p->where('scope', 'none')->where('totals', null));
     }
 
     public function test_finance_can_manage_imports(): void
@@ -68,9 +68,9 @@ class AccessControlTest extends TestCase
         }
 
         $q = ['period' => $period->id];
-        $this->actingAs($a)->get('/?'.http_build_query($q))->assertInertia(fn (Assert $p) => $p->where('scope', 'own')->where('totals.net', '100')->where('byPerson', []));
-        $this->actingAs($head)->get('/?'.http_build_query($q))->assertInertia(fn (Assert $p) => $p->where('scope', 'team')->where('totals.net', '300')->has('byPerson', 2));
-        $this->actingAs($vp)->get('/?'.http_build_query($q))->assertInertia(fn (Assert $p) => $p->where('scope', 'all')->where('totals.net', '700'));
+        $this->actingAs($a)->get('/dashboard?'.http_build_query($q))->assertInertia(fn (Assert $p) => $p->where('scope', 'own')->where('totals.net', '100')->where('byPerson', []));
+        $this->actingAs($head)->get('/dashboard?'.http_build_query($q))->assertInertia(fn (Assert $p) => $p->where('scope', 'team')->where('totals.net', '300')->has('byPerson', 2));
+        $this->actingAs($vp)->get('/dashboard?'.http_build_query($q))->assertInertia(fn (Assert $p) => $p->where('scope', 'all')->where('totals.net', '700'));
     }
 
     public function test_user_from_another_tenant_is_not_editable(): void

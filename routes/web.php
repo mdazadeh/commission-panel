@@ -15,7 +15,9 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
-    Route::get('/', DashboardController::class)->name('dashboard');
+    // The app root is the sub-folder itself (/commission); a real path avoids directory-slash redirects.
+    Route::redirect('/', '/dashboard');
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
     Route::middleware('permission:users.manage')->group(function () {
         Route::resource('users', UserController::class)->except(['show', 'destroy']);

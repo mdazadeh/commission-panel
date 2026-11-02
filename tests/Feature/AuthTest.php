@@ -13,7 +13,8 @@ class AuthTest extends TestCase
 
     public function test_guest_is_redirected_to_login(): void
     {
-        $this->get('/')->assertRedirect('/login');
+        $this->get('/')->assertRedirect('/dashboard');
+        $this->get('/dashboard')->assertRedirect('/login');
         $this->get('/login')->assertOk();
     }
 
@@ -21,7 +22,7 @@ class AuthTest extends TestCase
     {
         $user = $this->makeUser(Role::SalesExpert, ['username' => 'expert1', 'password' => 'secret-pass-1']);
 
-        $this->post('/login', ['username' => 'expert1', 'password' => 'secret-pass-1'])->assertRedirect('/');
+        $this->post('/login', ['username' => 'expert1', 'password' => 'secret-pass-1'])->assertRedirect('/dashboard');
         $this->assertAuthenticatedAs($user);
         $this->assertTrue(AuditEvent::where('action', 'auth.login')->where('user_id', $user->id)->exists());
     }
@@ -51,9 +52,9 @@ class AuthTest extends TestCase
     public function test_deactivated_user_is_logged_out_on_next_request(): void
     {
         $user = $this->makeUser(Role::SalesExpert);
-        $this->actingAs($user)->get('/')->assertOk();
+        $this->actingAs($user)->get('/dashboard')->assertOk();
 
         $user->update(['is_active' => false]);
-        $this->actingAs($user->fresh())->get('/')->assertRedirect('/login');
+        $this->actingAs($user->fresh())->get('/dashboard')->assertRedirect('/login');
     }
 }

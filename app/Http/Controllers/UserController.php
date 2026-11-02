@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 use Illuminate\Validation\Rules\Password;
@@ -46,8 +47,11 @@ class UserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request, null);
-        $user = User::create($data + ['tenant_id' => $request->user()->tenant_id]);
-        $this->audit->log('user.created', $user, null, $user->only(self::AUDITED));
+        // Change and audit entry are atomic: no change without its audit record.
+        DB::transaction(function () use ($data, $request) {
+            $user = User::create($data + ['tenant_id' => $request->user()->tenant_id]);
+            $this->audit->log('user.created', $user, null, $user->only(self::AUDITED));
+        });
 
         return redirect()->route('users.index')->with('success', 'کاربر ایجاد شد.');
     }
@@ -70,9 +74,11 @@ class UserController extends Controller
             return back()->with('error', 'نمی‌توانید نقش مدیر سامانه یا فعال‌بودن حساب خودتان را تغییر دهید.');
         }
 
-        $before = $user->only(self::AUDITED);
-        $user->update($data);
-        $this->audit->log('user.updated', $user, $before, $user->only(self::AUDITED), isset($data['password']) ? 'password changed' : null);
+        DB::transaction(function () use ($user, $data) {
+            $before = $user->only(self::AUDITED);
+            $user->update($data);
+            $this->audit->log('user.updated', $user, $before, $user->only(self::AUDITED), isset($data['password']) ? 'password changed' : null);
+        });
 
         return redirect()->route('users.index')->with('success', 'تغییرات ذخیره شد.');
     }

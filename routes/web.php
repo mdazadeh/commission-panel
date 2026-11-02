@@ -8,6 +8,9 @@ use App\Http\Controllers\SystemController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
+// The app root is the sub-folder itself (/commission); a real path avoids directory-slash redirects.
+Route::redirect('/', '/dashboard');
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'create'])->name('login');
     Route::post('/login', [LoginController::class, 'store'])->middleware('throttle:20,1');
@@ -15,8 +18,6 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
-    // The app root is the sub-folder itself (/commission); a real path avoids directory-slash redirects.
-    Route::redirect('/', '/dashboard');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
     Route::middleware('permission:users.manage')->group(function () {

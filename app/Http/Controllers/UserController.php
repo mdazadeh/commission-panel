@@ -94,7 +94,11 @@ class UserController extends Controller
         ], [
             'username.regex' => 'نام کاربری فقط حروف انگلیسی، عدد، نقطه، خط تیره و زیرخط.',
         ]);
-        $data['marketer_code'] = $data['marketer_code'] !== null && $data['marketer_code'] !== '' ? trim($data['marketer_code']) : null;
+        // Only touch the code when the field was submitted, so partial updates never wipe it.
+        if (array_key_exists('marketer_code', $data)) {
+            $code = trim((string) $data['marketer_code']);
+            $data['marketer_code'] = $code === '' ? null : $code;
+        }
 
         return $data;
     }

@@ -105,6 +105,8 @@ class AuditLogger
             unset($data[$key]);
         }
 
-        return $data;
+        // JSON round-trip turns enums into their values and dates into ISO strings,
+        // exactly as they will be stored, so the hash is computed over the persisted form.
+        return json_decode(json_encode($data, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR), true);
     }
 }

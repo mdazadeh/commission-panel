@@ -13,6 +13,12 @@ export default defineConfig({
         react(),
         tailwindcss(),
     ],
+    // CSS asset URLs (fonts) must be relative: the app is served from a sub-folder (/commission).
+    experimental: {
+        renderBuiltUrl(filename, { hostType }) {
+            return hostType === 'css' ? { relative: true } : undefined;
+        },
+    },
     resolve: {
         alias: { '@': '/resources/js' },
     },

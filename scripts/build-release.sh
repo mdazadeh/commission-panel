@@ -11,7 +11,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-VERSION="$(php -r '$c = require "config/app.php"; echo $c["version"];' 2>/dev/null || echo dev)"
+VERSION="$(sed -nE "s/.*'version' => '([^']+)'.*/\1/p" config/app.php | head -1)"
+VERSION="${VERSION:-dev}"
 SHA="$(git rev-parse --short HEAD)"
 NAME="faran-commission-${VERSION}-${SHA}"
 WORK="$ROOT/build/$NAME"
@@ -35,8 +36,12 @@ echo "==> PHP dependencies (production only)"
 cp -R vendor "$WORK/src/vendor"
 (cd "$WORK/src" && composer install --no-dev --optimize-autoloader --classmap-authoritative --no-interaction --no-scripts --quiet)
 (cd "$WORK/src" && php artisan package:discover --ansi >/dev/null)
+# Packages installed from source (GitHub zipballs are not reachable here) carry tests/docs/VCS data: prune
+# only top-level package folders, never runtime code.
 find "$WORK/src/vendor" -type d -name .git -prune -exec rm -rf {} +
+find "$WORK/src/vendor" -mindepth 3 -maxdepth 3 -type d \( -name tests -o -name Tests -o -name test -o -name docs -o -name doc -o -name .github -o -name examples \) -prune -exec rm -rf {} +
 rm -rf "$WORK/src/vendor/bin"
+(cd "$WORK/src" && composer dump-autoload --no-dev --classmap-authoritative --no-scripts --quiet)
 
 echo "==> Assemble"
 APP="$WORK/out/commission_app"
@@ -44,7 +49,7 @@ PUB="$WORK/out/public_html/commission"
 mkdir -p "$APP" "$PUB"
 cp -R "$WORK/src/public/." "$PUB/"
 rm -rf "$WORK/src/public"
-for p in node_modules tests resources/js resources/css package.json package-lock.json vite.config.js tsconfig.json phpunit.xml .editorconfig .gitattributes .npmrc scripts .github; do
+for p in node_modules tests CLAUDE.md resources/js resources/css package.json package-lock.json vite.config.js tsconfig.json phpunit.xml .editorconfig .gitattributes .npmrc scripts .github; do
     rm -rf "$WORK/src/$p"
 done
 cp -R "$WORK/src/." "$APP/"

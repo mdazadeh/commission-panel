@@ -1,0 +1,58 @@
+{
+    "_source": "docs/rules-catalog.md — decisions D-01..D-08 (oral approval 1405/08/11, pending finance signature)",
+    "currency": "IRR",
+    "achievement": {
+        "basis": "rial_only",
+        "formula": "sales / (quarter_target + carried_over_target)",
+        "include_lost_sales_for_tier": true,
+        "boundary": "strictly_greater"
+    },
+    "minimum_achievement_gate": { "above": "0.50", "effect": "all_commission_zero" },
+    "tiers": {
+        "sales_expert": [
+            { "above": "0.50", "rate": "0.010" },
+            { "above": "0.75", "rate": "0.016" },
+            { "above": "0.85", "rate": "0.018" },
+            { "above": "0.95", "rate": "0.020" },
+            { "above": "1.00", "rate": "0.022" },
+            { "above": "1.20", "rate": "0.025" }
+        ],
+        "sales_head": [
+            { "above": "0.50", "rate": "0.002" },
+            { "above": "0.75", "rate": "0.003" },
+            { "above": "0.85", "rate": "0.004" },
+            { "above": "0.95", "rate": "0.005" },
+            { "above": "1.00", "rate": "0.006" },
+            { "above": "1.20", "rate": "0.007" }
+        ],
+        "_open": "sales_head 1.10–1.20 band is provisional (D-07)"
+    },
+    "sales_types": {
+        "action_plan": { "rate": "tier", "match": "same_salesperson_same_month" },
+        "rep_no_contract": { "rate": "0.005" },
+        "rep_contract": { "rate": "0.010", "max_avg_discount": "0.15", "exempt_from_deductions": true }
+    },
+    "deductions": {
+        "high_discount": { "avg_discount_above": "0.15", "rate": "0.25" },
+        "non_cash": { "rate": "0.35", "basis": "farapayam_credit_column", "scope": "all_sales_except_rep_contract" },
+        "prior_receivables": { "sales_expert": "0.010", "sales_head": "0.005" }
+    },
+    "activity": {
+        "indicators": ["customer_meetings", "action_plan", "internal_meetings"],
+        "customer_meetings_monthly_target": 12,
+        "monthly_bands": [
+            { "below": "0.70", "deduction": "0.20", "deduction_if_monthly_target_met": "0.10" },
+            { "below": "1.00", "deduction": "0.10" }
+        ],
+        "aggregation": "worst_indicator_sum_of_months",
+        "monthly_target_assumption": "quarter_target / 3"
+    },
+    "incentives": {
+        "low_discount": { "avg_discount_below": "0.05", "reference_discount": "0.10", "share_sales_expert": "0.10", "share_sales_head": "0.025" }
+    },
+    "targets": {
+        "quarter_shares": { "1": "0.15", "2": "0.30", "3": "0.20", "4": "0.35" },
+        "carry_over_unmet": true
+    },
+    "rounding": { "final_per_person": "nearest_1000000_rial", "intermediate": "none" }
+}

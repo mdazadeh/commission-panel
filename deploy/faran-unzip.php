@@ -6,7 +6,8 @@
  * 1. Upload this file AND the release ZIP into  domains/faranepanel.ir/public_html/
  * 2. Open  https://faranepanel.ir/faran-unzip.php
  * 3. First visit writes a one-time token to  domains/faranepanel.ir/faran-unzip-token.txt
- *    (outside the web root) — read it in File Manager and enter it.
+ *    (outside the web root) — read it in File Manager and enter it. If the host refuses the write,
+ *    create that file by hand (any secret, ≥ 12 chars); the page shows diagnostics either way.
  * 4. The ZIP is extracted into domains/faranepanel.ir/ (→ commission_app/ and public_html/commission/),
  *    then the ZIP, the token and this script are deleted.
  *
@@ -38,29 +39,66 @@ function page(string $title, string $body): never
     exit;
 }
 
+function diagnostics(string $target, string $tokenFile, ?string $writeError): string
+{
+    $rows = [
+        'مسیر این اسکریپت' => __DIR__,
+        'پوشه مقصد' => $target,
+        'مقصد وجود دارد؟' => is_dir($target) ? 'بله' : 'خیر',
+        'مقصد قابل نوشتن؟' => is_writable($target) ? 'بله' : 'خیر',
+        'فایل توکن' => $tokenFile,
+        'فایل توکن وجود دارد؟' => file_exists($tokenFile) ? 'بله' : 'خیر',
+        'خطای نوشتن' => $writeError ?? '—',
+        'open_basedir' => (string) ini_get('open_basedir') ?: '—',
+        'PHP' => PHP_VERSION.' / '.PHP_SAPI,
+    ];
+    $html = '<details open><summary class="mut">اطلاعات عیب‌یابی (برای پشتیبانی)</summary><table style="width:100%;font-size:12px">';
+    foreach ($rows as $k => $v) {
+        $html .= '<tr><td class="mut" style="white-space:nowrap;padding:2px 8px 2px 0">'.h($k).'</td><td><code>'.h((string) $v).'</code></td></tr>';
+    }
+
+    return $html.'</table></details>';
+}
+
 if (! class_exists(ZipArchive::class)) {
     page('خطا', '<p class="bad">اکستنشن zip روی PHP فعال نیست.</p>');
 }
-if (! is_writable($target)) {
-    page('خطا', '<p class="bad">پوشه مقصد قابل نوشتن نیست: <code>'.h($target).'</code></p>');
-}
-if (! file_exists($tokenFile)) {
-    file_put_contents($tokenFile, bin2hex(random_bytes(10)));
-    @chmod($tokenFile, 0600);
-}
-$token = trim((string) file_get_contents($tokenFile));
 
-$zips = array_values(array_filter(glob(__DIR__.'/*.zip') ?: [], fn ($f) => str_contains(basename($f), 'commission')));
+// Token: created automatically if possible; otherwise the user creates the file by hand in File Manager.
+// Either way only someone with File Manager access can know it.
+$writeError = null;
+if (! file_exists($tokenFile)) {
+    $ok = @file_put_contents($tokenFile, bin2hex(random_bytes(10)));
+    if ($ok === false) {
+        $writeError = error_get_last()['message'] ?? 'unknown';
+    } else {
+        @chmod($tokenFile, 0600);
+    }
+}
+clearstatcache();
+$token = file_exists($tokenFile) ? trim((string) @file_get_contents($tokenFile)) : '';
+if (strlen($token) < 12) {
+    page('توکن ساخته نشد', '<p class="bad">اسکریپت نتوانست فایل توکن را بسازد یا توکن کوتاه است.</p>
+    <p><b>راه جایگزین:</b> در File Manager، داخل پوشه <code>'.h($target).'</code> یک فایل متنی جدید به نام <code>faran-unzip-token.txt</code> بسازید و یک رمز دلخواه انگلیسی، حداقل ۱۲ کاراکتر، در آن بنویسید و ذخیره کنید. سپس این صفحه را دوباره باز کنید و همان رمز را وارد کنید.</p>'
+        .diagnostics($target, $tokenFile, $writeError));
+}
+if (! is_writable($target)) {
+    page('خطا', '<p class="bad">پوشه مقصد قابل نوشتن نیست.</p>'.diagnostics($target, $tokenFile, $writeError));
+}
+
+// glob() may be disabled on shared hosts → scandir fallback.
+$entries = function_exists('glob') ? (glob(__DIR__.'/*.zip') ?: []) : array_map(fn ($f) => __DIR__.'/'.$f, array_filter(scandir(__DIR__) ?: [], fn ($f) => str_ends_with(strtolower($f), '.zip')));
+$zips = array_values(array_filter($entries, fn ($f) => str_contains(basename($f), 'commission')));
 if (! $zips) {
-    page('فایل ZIP پیدا نشد', '<p>فایل ZIP نسخه (نامی که شامل <code>commission</code> است) را کنار همین فایل در <code>'.h(__DIR__).'</code> آپلود کنید.</p>');
+    page('فایل ZIP پیدا نشد', '<p>فایل ZIP نسخه (نامی که شامل <code>commission</code> است) را کنار همین فایل در <code>'.h(__DIR__).'</code> آپلود کنید.</p>'.diagnostics($target, $tokenFile, $writeError));
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     $options = implode('', array_map(fn ($z) => '<option>'.h(basename($z)).'</option>', $zips));
-    page('باز کردن بسته سامانه پورسانت', '<p class="mut">توکن را از فایل زیر (با File Manager) بخوانید:<br><code>'.h($tokenFile).'</code></p>
-    <p class="mut">مقصد: <code>'.h($target).'</code></p>
+    page('باز کردن بسته سامانه پورسانت', '<p>توکن را از این فایل (با File Manager) بخوانید:<br><code>'.h($tokenFile).'</code></p>
+    <p class="mut">اگر فایل را نمی‌بینید، صفحه File Manager را Refresh کنید.</p>
     <form method="post"><label>فایل</label><select name="zip">'.$options.'</select>
-    <label>توکن</label><input name="token" autocomplete="off" required><button>باز کردن</button></form>');
+    <label>توکن</label><input name="token" autocomplete="off" required><button>باز کردن</button></form>'.diagnostics($target, $tokenFile, $writeError));
 }
 
 if (! hash_equals($token, trim((string) ($_POST['token'] ?? '')))) {

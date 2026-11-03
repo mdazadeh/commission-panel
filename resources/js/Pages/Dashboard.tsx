@@ -24,6 +24,7 @@ function MyCommission({ r, runAt }: { r: Row; runAt: string }) {
     const url = useUrl();
     const ach = Number(r.achievement);
     const activity = Number(r.activityRate);
+    const incomplete = r.flags.some((f) => f.code === 'activity_incomplete');
     return (
         <section aria-labelledby="mine" className="space-y-3">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -34,7 +35,13 @@ function MyCommission({ r, runAt }: { r: Row; runAt: string }) {
                 <Kpi icon="target" label="تحقق تارگت" value={pct(r.achievement)} hint={`فروش ${rial(r.salesTotal)} از ${rial(r.targetTotal)} ریال`} tone={ach > 1 ? 'ok' : ach > 0.5 ? 'default' : 'bad'} />
                 <Kpi icon="layers" label="Tier فعلی" value={Number(r.tierRate) ? rateLabel(r.tierRate) : 'زیر حد نصاب'} hint={r.role === 'sales_head' ? 'نرخ رئیس روی فروش تیم' : 'روی فروش اکشن‌پلن'} />
                 <Kpi icon="wallet" label="پورسانت موقت (ریال)" value={rial(r.payable)} hint="پیش‌بینی؛ تا تسویه فصل قطعی نیست" tone="default" />
-                <Kpi icon="activity" label="کسر فعالیت" value={pct(r.activityRate, 0)} tone={activity === 0 ? 'ok' : activity >= 0.4 ? 'bad' : 'warn'} hint={activity === 0 ? 'فعالیت کامل' : 'از پورسانت کسر می‌شود'} />
+                <Kpi
+                    icon="activity"
+                    label="کسر فعالیت"
+                    value={pct(r.activityRate, 0)}
+                    tone={incomplete ? 'warn' : activity === 0 ? 'ok' : activity >= 0.4 ? 'bad' : 'warn'}
+                    hint={incomplete ? 'ناقص: بخشی از فعالیت هنوز تأیید نشده' : activity === 0 ? 'فعالیت کامل' : 'از پورسانت کسر می‌شود'}
+                />
             </div>
             <div className="card space-y-3">
                 <Progress value={ach} />

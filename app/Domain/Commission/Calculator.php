@@ -13,6 +13,12 @@ use Brick\Math\RoundingMode;
  */
 final class Calculator
 {
+    private const INDICATOR_LABELS = [
+        'customer_meetings' => 'جلسات با مشتری',
+        'action_plan' => 'فعالیت اکشن‌پلن',
+        'internal_meetings' => 'جلسات درون‌سازمانی',
+    ];
+
     /** @param array<string,mixed> $params RuleVersion::parameters */
     public function __construct(private readonly array $params) {}
 
@@ -206,12 +212,13 @@ final class Calculator
         $detail = [];
 
         foreach ($indicators as $indicator) {
+            $label = self::INDICATOR_LABELS[$indicator] ?? $indicator;
             $sum = BigDecimal::zero();
             foreach ($in->periodMonths as $m) {
                 $e = $in->activity->months[$m][$indicator] ?? null;
                 if (! $e || $e['status'] !== 'approved') {
                     $incomplete[] = $m;
-                    $detail[] = "{$indicator}@{$m}: ".($e ? $e['status'] : 'missing');
+                    $detail[] = "{$label} ماه {$m}: ".($e ? 'منتظر تأیید' : 'ثبت نشده');
 
                     continue;
                 }
@@ -225,9 +232,9 @@ final class Calculator
                     }
                 }
                 $sum = $sum->plus($deduction);
-                $detail[] = "{$indicator}@{$m}: {$e['actual']}/{$e['target']} → {$deduction}".($met ? ' (تارگت ماه محقق)' : '');
+                $detail[] = "{$label} ماه {$m}: {$e['actual']}/{$e['target']} → کسر {$deduction}".($met ? ' (تارگت ماه محقق)' : '');
             }
-            $r->add("activity_{$indicator}", "کسر فعالیت — {$indicator}", (string) $sum, ['rule' => 'D-02']);
+            $r->add("activity_{$indicator}", "کسر فعالیت — {$label}", (string) $sum, ['rule' => 'D-02']);
             $worst = Money::max($worst, $sum);
         }
         if ($worst->isGreaterThan(1)) {

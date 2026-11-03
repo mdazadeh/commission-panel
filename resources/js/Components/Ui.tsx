@@ -93,12 +93,14 @@ export function Progress({ value, max = 1.2, marks = [0.5, 0.75, 0.85, 0.95, 1, 
             <div className="relative h-3 overflow-hidden rounded-full bg-line" role="progressbar" aria-valuemin={0} aria-valuemax={max * 100} aria-valuenow={Math.round(value * 100)} aria-label="درصد تحقق تارگت">
                 <div className="h-full rounded-full bg-brand transition-[width] duration-300" style={{ width: `${pct}%` }} />
                 {marks.map((m) => (
-                    <span key={m} className="absolute top-0 h-full w-px bg-card" style={{ insetInlineStart: `${(m / max) * 100}%` }} />
+                    <span key={m} className="absolute top-0 h-full w-px bg-card" style={{ right: `${(m / max) * 100}%` }} />
                 ))}
             </div>
-            <div className="relative h-4 text-[11px] text-muted">
+            {/* Physical `right` (the app is RTL-only): `.num` is LTR, so logical insets would flip the labels. */}
+            <div className="relative h-4 text-[11px] text-muted" aria-hidden>
                 {marks.map((m) => (
-                    <span key={m} className="num absolute translate-x-1/2" style={{ insetInlineStart: `${(m / max) * 100}%` }}>{Math.round(m * 100)}٪</span>
+                    // On phones only the key marks are labelled, so labels never overlap.
+                    <span key={m} className={`num absolute translate-x-1/2 ${[0.5, 1, 1.2].includes(m) ? '' : 'hidden sm:inline'}`} style={{ right: `${(m / max) * 100}%` }}>{Math.round(m * 100)}٪</span>
                 ))}
             </div>
         </div>

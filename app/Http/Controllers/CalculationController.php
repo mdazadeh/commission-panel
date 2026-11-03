@@ -24,6 +24,7 @@ class CalculationController extends Controller
         $user = $request->user();
         $periods = FiscalPeriod::query()->orderByDesc('starts_on')->get();
         $period = $periods->firstWhere('id', $request->integer('period'))
+            ?? $periods->firstWhere('id', CalculationRun::latest('id')->value('fiscal_period_id'))
             ?? $periods->first(fn ($p) => $p->starts_on->isPast() && $p->ends_on->isFuture()) ?? $periods->first();
         $run = $period ? CalculationRun::with(['creator:id,name', 'ruleVersion:id,code,status'])->where('fiscal_period_id', $period->id)->latest('id')->first() : null;
 

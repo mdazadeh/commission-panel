@@ -27,7 +27,12 @@ class DashboardController extends Controller
 
         $periods = FiscalPeriod::query()->orderByDesc('starts_on')->get();
         $current = $periods->firstWhere(fn ($p) => $p->starts_on->lte(Carbon::today()) && $p->ends_on->gte(Carbon::today()));
-        $period = $request->integer('period') ? $periods->firstWhere('id', $request->integer('period')) : $current;
+        // Default: the current quarter if it has a calculation, otherwise the latest calculated quarter.
+        $latestRunPeriod = CalculationRun::latest('id')->value('fiscal_period_id');
+        $currentHasRun = $current && CalculationRun::where('fiscal_period_id', $current->id)->exists();
+        $period = $request->integer('period')
+            ? $periods->firstWhere('id', $request->integer('period'))
+            : ($currentHasRun || ! $latestRunPeriod ? $current : $periods->firstWhere('id', $latestRunPeriod));
 
         $names = User::where('tenant_id', $user->tenant_id)->pluck('name', 'id');
         $base = SalesDocument::query()->when($period, fn ($q) => $q->where('fiscal_period_id', $period->id));

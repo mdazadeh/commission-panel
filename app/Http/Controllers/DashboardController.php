@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CalculationRun;
 use App\Models\FiscalPeriod;
 use App\Models\ImportBatch;
 use App\Models\SalesDocument;
@@ -28,6 +29,7 @@ class DashboardController extends Controller
         $current = $periods->firstWhere(fn ($p) => $p->starts_on->lte(Carbon::today()) && $p->ends_on->gte(Carbon::today()));
         $period = $request->integer('period') ? $periods->firstWhere('id', $request->integer('period')) : $current;
 
+        $names = User::where('tenant_id', $user->tenant_id)->pluck('name', 'id');
         $base = SalesDocument::query()->when($period, fn ($q) => $q->where('fiscal_period_id', $period->id));
         $scope->apply($base, $user);
 
@@ -35,7 +37,6 @@ class DashboardController extends Controller
             'COUNT(*) as documents, COALESCE(SUM(net_amount),0) as net, COALESCE(SUM(discount_amount),0) as discount, COALESCE(SUM(credit_amount),0) as credit'
         )->first();
 
-        $names = User::where('tenant_id', $user->tenant_id)->pluck('name', 'id');
         $byPerson = in_array($level, ['team', 'all'], true)
             ? (clone $base)->select('user_id', DB::raw('COUNT(*) as documents'), DB::raw('SUM(net_amount) as net'))
                 ->groupBy('user_id')->orderByDesc('net')->get()
@@ -50,7 +51,22 @@ class DashboardController extends Controller
             ? ImportBatch::query()->where('status', 'committed')->latest('committed_at')->value('committed_at')
             : null;
 
+        // Latest provisional calculation of the period (phase 2). Never a payable amount before settlement.
+        $run = $period ? CalculationRun::where('fiscal_period_id', $period->id)->latest('id')->first() : null;
+        $mine = $run?->results()->where('user_id', $user->id)->first();
+        $visible = $scope->visibleUserIds($user);
+        $team = $run && in_array($level, ['team', 'all'], true)
+            ? $run->results()->when($visible !== null, fn ($q) => $q->whereIn('user_id', $visible))->where('user_id', '!=', $user->id)
+                ->orderByDesc('achievement')->limit(15)->get()
+                ->map(fn ($r) => CalculationController::resultRow($r, $names[$r->user_id] ?? '—'))->values()
+            : [];
+
         return Inertia::render('Dashboard', [
+            'calc' => $run ? [
+                'runAt' => $run->created_at->toIso8601String(),
+                'mine' => $mine ? CalculationController::resultRow($mine, $user->name) : null,
+                'team' => $team,
+            ] : null,
             'scope' => $level,
             'periods' => $periods->map(fn ($p) => ['id' => $p->id, 'label' => $p->label(), 'status' => $p->status])->values(),
             'periodId' => $period?->id,

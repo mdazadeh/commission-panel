@@ -29,3 +29,24 @@ export function jDateTime(iso: string | null | undefined): string {
 export function can(permissions: string[] | undefined, permission: string): boolean {
     return !!permissions?.includes(permission);
 }
+
+export function pct(ratio: string | number | null | undefined, digits = 1): string {
+    if (ratio === null || ratio === undefined || ratio === '') return '—';
+    return `${new Intl.NumberFormat('fa-IR', { maximumFractionDigits: digits }).format(Number(ratio) * 100)}٪`;
+}
+
+export function rateLabel(rate: string | number): string {
+    return `${new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 3 }).format(Number(rate) * 100)}٪`;
+}
+
+/** Integer rial formatting for 4-decimal engine values (truncates the fraction for display). */
+export function rialDec(value: string | null | undefined): string {
+    if (!value) return '—';
+    return rial(value.split('.')[0]);
+}
+
+export const CATEGORY_LABEL: Record<string, string> = {
+    action_plan: 'اکشن‌پلن لیبل‌دار',
+    rep_contract: 'نماینده با قرارداد',
+    rep_no_contract: 'نماینده بدون قرارداد / غیر لیبل',
+};

@@ -88,4 +88,30 @@ final class Persian
             self::jalaliToDate(self::formatJalali($jalaliYear, $endMonth, $endDay)),
         ];
     }
+
+    public const MONTHS = [1 => 'فروردین', 2 => 'اردیبهشت', 3 => 'خرداد', 4 => 'تیر', 5 => 'مرداد', 6 => 'شهریور',
+        7 => 'مهر', 8 => 'آبان', 9 => 'آذر', 10 => 'دی', 11 => 'بهمن', 12 => 'اسفند'];
+
+    /** @return array{0:int,1:int} current Jalali [year, month] */
+    public static function currentYearMonth(): array
+    {
+        [$jy, $jm] = CalendarUtils::toJalali((int) date('Y'), (int) date('n'), (int) date('j'));
+
+        return [$jy, $jm];
+    }
+
+    /** Parse «1405-07» / «1405/7» into [year, month], falling back to the current month. */
+    public static function yearMonth(?string $value): array
+    {
+        if ($value && preg_match('#^(\d{4})[/-](\d{1,2})$#', self::normalize($value), $m) && (int) $m[2] >= 1 && (int) $m[2] <= 12) {
+            return [(int) $m[1], (int) $m[2]];
+        }
+
+        return self::currentYearMonth();
+    }
+
+    public static function monthLabel(int $jy, int $jm): string
+    {
+        return self::MONTHS[$jm].' '.$jy;
+    }
 }

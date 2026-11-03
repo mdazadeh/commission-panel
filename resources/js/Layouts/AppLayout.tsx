@@ -2,6 +2,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState, type ReactNode } from 'react';
 import type { SharedProps } from '@/types';
 import { can } from '@/lib/format';
+import Icon from '@/Components/Icon';
 import { useUrl } from '@/lib/url';
 
 type Item = { label: string; href?: string; permission?: string; soon?: boolean };
@@ -9,16 +10,25 @@ type Group = { title: string; items: Item[] };
 
 // Menu architecture from brief §10. «soon» items are later phases and are shown disabled.
 const MENU: Group[] = [
-    { title: 'داشبوردها', items: [{ label: 'داشبورد', href: '/dashboard' }] },
+    {
+        title: 'داشبوردها',
+        items: [
+            { label: 'داشبورد', href: '/dashboard' },
+            { label: 'محاسبه و ریز پورسانت', href: '/calculations', permission: 'calc.view' },
+        ],
+    },
     {
         title: 'مدیریت داده',
         items: [
             { label: 'ورود اطلاعات فروش', href: '/imports', permission: 'imports.view' },
-            { label: 'اکشن‌پلن', soon: true },
-            { label: 'فعالیت ماهانه', soon: true },
+            { label: 'اکشن‌پلن', href: '/action-plans', permission: 'action_plan.submit' },
+            { label: 'اکشن‌پلن', href: '/action-plans', permission: 'action_plan.review' },
+            { label: 'فعالیت ماهانه', href: '/activity', permission: 'activity.submit' },
+            { label: 'فعالیت ماهانه', href: '/activity', permission: 'activity.review' },
+            { label: 'مشتریان', href: '/customers', permission: 'customers.manage' },
         ],
     },
-    { title: 'موتور پورسانت', items: [{ label: 'تارگت و قوانین', soon: true }, { label: 'محاسبه و Trace', soon: true }] },
+    { title: 'موتور پورسانت', items: [{ label: 'تارگت‌ها', href: '/targets', permission: 'targets.manage' }] },
     { title: 'تسویه مالی', items: [{ label: 'تسویه فصلی', soon: true }] },
     { title: 'گزارش و تحلیل', items: [{ label: 'گزارش‌ها', soon: true }] },
     {
@@ -38,14 +48,19 @@ export default function AppLayout({ title, children, actions }: { title: string;
     const current = typeof window !== 'undefined' ? window.location.pathname : '';
     const perms = auth.user?.permissions ?? [];
 
-    const groups = MENU.map((g) => ({ ...g, items: g.items.filter((i) => !i.permission || can(perms, i.permission)) })).filter(
+    // Filter by permission and de-duplicate items reachable through more than one permission.
+    const groups = MENU.map((g) => ({
+        ...g,
+        items: g.items.filter((i, idx, all) => (!i.permission || can(perms, i.permission)) && all.findIndex((o) => o.href === i.href && (!o.permission || can(perms, o.permission))) === idx),
+    })).filter(
         (g) => g.items.some((i) => !i.soon),
     );
 
     return (
         <>
             <Head title={title} />
-            <div className="min-h-screen lg:flex">
+            <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:m-2 focus:rounded focus:bg-card focus:p-2">پرش به محتوا</a>
+            <div className="min-h-dvh lg:flex">
                 <aside
                     className={`${open ? 'block' : 'hidden'} fixed inset-y-0 right-0 z-30 w-64 overflow-y-auto border-l border-line bg-card p-4 lg:static lg:block`}
                 >
@@ -86,8 +101,8 @@ export default function AppLayout({ title, children, actions }: { title: string;
                 <div className="min-w-0 flex-1">
                     <header className="flex items-center justify-between gap-3 border-b border-line bg-card px-4 py-3">
                         <div className="flex items-center gap-3">
-                            <button className="btn-ghost px-2 py-1 lg:hidden" onClick={() => setOpen(true)} aria-label="منو">
-                                ☰
+                            <button className="btn-ghost px-2 py-1 lg:hidden" onClick={() => setOpen(true)} aria-label="باز کردن منو">
+                                <Icon name="menu" />
                             </button>
                             <h1 className="text-lg font-bold">{title}</h1>
                         </div>
@@ -100,9 +115,9 @@ export default function AppLayout({ title, children, actions }: { title: string;
                             </button>
                         </div>
                     </header>
-                    <main className="mx-auto max-w-6xl space-y-4 p-4">
-                        {flash.success && <div className="rounded-lg border border-ok/30 bg-ok/10 px-4 py-2 text-sm text-ok">{flash.success}</div>}
-                        {flash.error && <div className="rounded-lg border border-bad/30 bg-bad/10 px-4 py-2 text-sm text-bad">{flash.error}</div>}
+                    <main id="main" className="mx-auto max-w-7xl space-y-4 p-4">
+                        {flash.success && <div role="status" className="flex items-center gap-2 rounded-lg border border-ok/30 bg-ok/10 px-4 py-2 text-sm text-ok"><Icon name="check" className="size-4" />{flash.success}</div>}
+                        {flash.error && <div role="alert" className="flex items-center gap-2 rounded-lg border border-bad/30 bg-bad/10 px-4 py-2 text-sm text-bad"><Icon name="alert" className="size-4" />{flash.error}</div>}
                         {actions && <div className="flex flex-wrap justify-end gap-2">{actions}</div>}
                         {children}
                     </main>

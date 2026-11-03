@@ -13,32 +13,54 @@
     font-display: swap;
 }
 
+/* Design system: «Data-Dense Dashboard» (ui-ux-pro-max) — blue data + amber highlights, WCAG AA tokens. */
 @theme {
     --font-sans: 'Vazirmatn', Tahoma, ui-sans-serif, system-ui, sans-serif;
-    --color-surface: #f6f7f9;
+    --color-surface: #f8fafc;
     --color-card: #ffffff;
-    --color-ink: #1c1f24;
-    --color-muted: #667085;
-    --color-line: #e4e7ec;
-    --color-brand: #0b5cad;
-    --color-brand-strong: #08467f;
-    --color-ok: #127a3a;
-    --color-warn: #9a6400;
-    --color-bad: #c0262d;
+    --color-ink: #0f172a;
+    --color-muted: #475569;
+    --color-line: #e2e8f0;
+    --color-brand: #1e40af;
+    --color-brand-strong: #1e3a8a;
+    --color-accent: #b45309;
+    --color-ok: #15803d;
+    --color-warn: #a16207;
+    --color-bad: #b91c1c;
+}
+
+/* Dark mode: lighter tonal variants, contrast re-checked (not inverted). */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --color-surface: #0b1220;
+        --color-card: #111a2e;
+        --color-ink: #e5e9f0;
+        --color-muted: #a3afc2;
+        --color-line: #23304a;
+        --color-brand: #7aa2ff;
+        --color-brand-strong: #a5c0ff;
+        --color-accent: #f5a524;
+        --color-ok: #4ade80;
+        --color-warn: #facc15;
+        --color-bad: #f87171;
+    }
 }
 
 @layer base {
-    body { min-height: 100vh; }
+    body { min-height: 100dvh; line-height: 1.7; }
+    :focus-visible { outline: 2px solid var(--color-brand); outline-offset: 2px; border-radius: 4px; }
+    button, a, select, [role='button'] { cursor: pointer; }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
     .num { font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate; }
 }
 
 /* Tailwind 4: reusable classes are declared as utilities so they can be composed with @apply. */
 @utility card { @apply rounded-xl border border-line bg-card p-4; }
-@utility btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50; }
-@utility btn-primary { @apply btn bg-brand text-white hover:bg-brand-strong; }
+@utility btn { @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition duration-200 disabled:cursor-not-allowed disabled:opacity-50; }
+@utility btn-primary { @apply btn bg-brand text-white hover:bg-brand-strong dark:text-surface; }
 @utility btn-ghost { @apply btn border border-line bg-card text-ink hover:bg-surface; }
 @utility btn-danger { @apply btn bg-bad text-white hover:opacity-90; }
-@utility input { @apply w-full rounded-lg border border-line bg-card px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20; }
+@utility input { @apply min-h-10 w-full rounded-lg border border-line bg-card px-3 py-2 text-sm text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/20; }
 @utility label { @apply mb-1 block text-sm font-medium text-ink; }
 @utility badge { @apply inline-flex rounded-full px-2 py-0.5 text-xs font-medium; }
 
@@ -46,4 +68,5 @@
     .table { @apply w-full text-sm; }
     .table th { @apply border-b border-line px-3 py-2 text-right font-medium text-muted; }
     .table td { @apply border-b border-line px-3 py-2 align-top; }
+    .table tbody tr:hover { @apply bg-surface; }
 }

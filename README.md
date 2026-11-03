@@ -65,6 +65,7 @@ npm run typecheck
 2. در DirectAdmin ← File Manager، فایل ZIP را در `domains/faranepanel.ir/` آپلود و Extract کنید. نتیجه:
    - `domains/faranepanel.ir/commission_app/` — کد، vendor، storage، `.env` (خارج از دسترس وب)
    - `domains/faranepanel.ir/public_html/commission/` — فقط فایل‌های عمومی
+   - اگر Extract فایل‌منیجر خطا داد (`No such file or directory (os error 2)`): فایل ZIP و [`deploy/faran-unzip.php`](deploy/faran-unzip.php) را در `public_html/` آپلود کنید، `https://faranepanel.ir/faran-unzip.php` را باز کنید و با توکنی که در `domains/faranepanel.ir/faran-unzip-token.txt` ساخته می‌شود، بسته را باز کنید. اسکریپت بعد از کار خودش و ZIP را حذف می‌کند.
 3. در DirectAdmin یک دیتابیس MySQL **خالی** بسازید.
 4. `https://faranepanel.ir/commission/install.php` را باز کنید. توکن نصب در `commission_app/storage/install-token.txt` ساخته می‌شود (از File Manager بخوانید).
 5. پس از نصب، `install.php` خودکار حذف می‌شود (اگر نشد، دستی حذف کنید).
